@@ -1,1 +1,404 @@
-# xiutai09
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <script>
+const password = prompt("Nhập mật khẩu để chơi game:");
+if(password !== "88888888") {
+  document.body.innerHTML = "<h1>Không có quyền truy cập</h1>";
+}
+</script>
+
+  <meta charset="UTF-8">
+  <title>Tài Xỉu Online</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #222, #444);
+      color: white;
+      text-align: center;
+      padding: 20px;
+    }
+    h1 {
+      margin-bottom: 10px;
+      color: gold;
+      text-shadow: 2px 2px 5px black;
+    }
+
+    .dice-container {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      margin: 30px 0;
+      gap: 20px;
+      height: 120px;
+    }
+
+    .dice {
+      width: 80px;
+      height: 80px;
+      background: white;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+      font-weight: bold;
+      color: black;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.6);
+      z-index: 1;
+    }
+
+    @keyframes shake {
+      0% { transform: rotate(0deg) }
+      25% { transform: rotate(10deg) }
+      50% { transform: rotate(-10deg) }
+      75% { transform: rotate(10deg) }
+      100% { transform: rotate(0deg) }
+    }
+
+    /* --- Nắp (lid) --- */
+    .lid {
+      position: absolute;
+      top: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 340px;
+      height: 120px;
+      background: linear-gradient(180deg,#7a4b2e,#4f2b18);
+      border-radius: 12px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.8);
+      z-index: 3;
+      transition: transform 0.9s cubic-bezier(.2,.9,.2,1), opacity 0.6s;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      color: #fff;
+      font-weight:700;
+      letter-spacing:1px;
+    }
+    .lid.open {
+      transform: translateX(420px);
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .controls {
+      margin-top: 10px;
+    }
+    button {
+      padding: 10px 18px;
+      margin: 6px;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      cursor: pointer;
+      background: crimson;
+      color: white;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+      transition: background .15s ease;
+    }
+    button:hover { background: darkred; }
+
+    #result {
+      font-size: 18px;
+      margin-top: 12px;
+      color: lightgreen;
+    }
+    #balance {
+      margin-top: 8px;
+      font-size: 18px;
+      font-weight: bold;
+      color: cyan;
+    }
+
+    @media (max-width:420px){
+      .lid{ width: 260px; transform: translateX(-50%); }
+      .lid.open { transform: translateX(300px); }
+    }
+
+    /* 🔽 Nút mở danh sách kết quả */
+    #historyBtn {
+      position: fixed;
+      top: 50%;
+      left: 10px;
+      transform: translateY(-50%);
+      padding: 10px 15px;
+      border-radius: 50%;
+      background: gold;
+      color: black;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.6);
+      z-index: 1000;
+    }
+
+    /* 🔽 Popup danh sách kết quả */
+    #historyPopup {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 300px;
+      max-height: 400px;
+      background: #222;
+      color: white;
+      border-radius: 12px;
+      padding: 15px;
+      overflow-y: auto;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.8);
+      z-index: 2000;
+    }
+
+    /* Nút đóng */
+    #closeHistory {
+      float: right;
+      cursor: pointer;
+      font-weight: bold;
+      color: red;
+      font-size: 18px;
+    }
+
+    #historyList {
+      margin-top: 10px;
+      text-align: left;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎲 Game Tài Xỉu 🎲</h1>
+
+  <div>
+    <label>Chọn: </label>
+    <select id="playerChoice">
+      <option value="T">Tài</option>
+      <option value="X">Xỉu</option>
+    </select>
+    <br><br>
+    <label>Số tiền cược: </label>
+    <input type="number" id="betAmount" value="100" min="1">
+  </div>
+  
+  <div class="dice-container">
+    <div class="dice" id="dice1">?</div>
+    <div class="dice" id="dice2">?</div>
+    <div class="dice" id="dice3">?</div>
+    <div class="lid" id="lid">🔒 Nắp đậy — (Chưa mở)</div>
+  </div>
+  
+  <div class="controls">
+    <button id="btnPlay" onclick="play()">Lắc xúc xắc</button>
+    <button id="btnToggle" onclick="toggleCover()">Mở nắp / Đóng nắp</button>
+  </div>
+
+  <div id="result">Chưa có lượt chơi</div>
+  <div id="balance">Số dư: ?</div>
+
+  <!-- 🔽 Nút mở danh sách -->
+  <button id="historyBtn">📜</button>
+
+  <!-- 🔽 Popup danh sách kết quả -->
+  <div id="historyPopup">
+    <span id="closeHistory">❌</span>
+    <h3>Lịch sử kết quả</h3>
+    <ul id="historyList"></ul>
+  </div>
+
+  <script>
+  // 🔹 Lấy số dư từ localStorage, mặc định 1000 nếu chưa có
+  let balance = parseInt(localStorage.getItem("balance") || "1000");
+  let pendingResult = "";
+  let pendingBalance = balance;
+  let pendingDice = null;
+  let coverClosed = true;
+  let history = [];
+
+  // 🔹 Hàm lấy tỷ lệ Tài từ localStorage (admin chỉnh)
+  function getTaiRatio() {
+    let ratio = parseInt(localStorage.getItem("taiRatio"), 10);
+    if (!ratio || ratio < 0 || ratio > 100) ratio = 53; // mặc định 53%
+    return ratio / 100; // chuyển về 0~1
+  }
+
+  function saveBalance() {
+    localStorage.setItem("balance", balance);
+  }
+
+  // 🔹 Hàm tung xúc xắc theo tỷ lệ Tài/Xỉu
+  function rollBiasedDice() {
+    const taiRatio = getTaiRatio();
+    const isTai = Math.random() < taiRatio; // quyết định Tài hay Xỉu
+    let dice;
+    if (isTai) {
+      // Tạo tổng >= 11
+      do {
+        dice = [rand1to6(), rand1to6(), rand1to6()];
+      } while (dice.reduce((a,b)=>a+b,0) < 11);
+    } else {
+      // Tạo tổng <= 10
+      do {
+        dice = [rand1to6(), rand1to6(), rand1to6()];
+      } while (dice.reduce((a,b)=>a+b,0) > 10);
+    }
+    return dice;
+  }
+
+  function rand1to6() {
+    return Math.floor(Math.random() * 6) + 1;
+  }
+
+  function setDiceQuestionMarks() {
+    document.getElementById("dice1").textContent = "?";
+    document.getElementById("dice2").textContent = "?";
+    document.getElementById("dice3").textContent = "?";
+  }
+
+  function updateBalanceDisplay() {
+    document.getElementById("balance").textContent = coverClosed ? "Số dư: ?" : "Số dư: " + balance;
+  }
+
+  function toggleCover() {
+    const lid = document.getElementById("lid");
+    coverClosed = !coverClosed;
+
+    if (!coverClosed) {
+      lid.classList.add("open");
+      lid.textContent = "🔓 Nắp mở";
+      if (pendingResult) {
+        // Hiển thị kết quả chờ
+        document.getElementById("dice1").textContent = pendingDice[0];
+        document.getElementById("dice2").textContent = pendingDice[1];
+        document.getElementById("dice3").textContent = pendingDice[2];
+        document.getElementById("result").innerHTML = pendingResult;
+        balance = pendingBalance;
+        saveBalance();
+        addToHistory(pendingResult);
+
+        // Reset pending
+        pendingResult = "";
+        pendingDice = null;
+        pendingBalance = balance;
+      } else {
+        document.getElementById("result").textContent = "Chưa có lượt chơi";
+      }
+    } else {
+      lid.classList.remove("open");
+      lid.textContent = "🔒 Nắp đậy — (Chưa mở)";
+      setDiceQuestionMarks();
+      document.getElementById("result").textContent = "Chưa mở nắp";
+    }
+
+    updateBalanceDisplay();
+  }
+
+  function play() {
+    const player = document.getElementById("playerChoice").value;
+    const bet = parseInt(document.getElementById("betAmount").value, 10);
+
+    if (!Number.isInteger(bet) || bet <= 0) { 
+      alert("Nhập số tiền cược hợp lệ (>0)."); 
+      return; 
+    }
+
+    if (bet > balance) { 
+      alert("Không đủ tiền!"); 
+      return; 
+    }
+
+    const diceEls = [
+      document.getElementById("dice1"),
+      document.getElementById("dice2"),
+      document.getElementById("dice3")
+    ];
+
+    setDiceQuestionMarks();
+    diceEls.forEach(d => d.style.animation = "shake 0.45s infinite");
+
+    setTimeout(() => {
+      const [q1, q2, q3] = rollBiasedDice();
+      const sum = q1 + q2 + q3;
+      const result = (sum >= 11) ? "Tài" : "Xỉu";
+      const payout = Math.floor(bet * 1.98);
+
+      let msg = `🎲 Nhà cái mở: <b>${result}</b> (${sum}) với ${q1}, ${q2}, ${q3}<br>`;
+
+      if ((player === "T" && result === "Tài") || (player === "X" && result === "Xỉu")) {
+        msg += `✅ Bạn thắng! Nhận được ${payout} (bao gồm gốc).`;
+        pendingBalance = balance + (payout - bet);
+      } else {
+        msg += `❌ Bạn thua! Mất ${bet}.`;
+        pendingBalance = balance - bet;
+      }
+
+      diceEls.forEach(d => d.style.animation = "none");
+
+      // Lưu kết quả chờ
+      pendingResult = msg;
+      pendingDice = [q1, q2, q3];
+
+      if (!coverClosed) {
+        toggleCover(); // mở nắp luôn sẽ hiển thị kết quả
+      } else {
+        document.getElementById("result").textContent = "Có kết quả chờ mở nắp";
+      }
+
+    }, 1500);
+  }
+
+  function addToHistory(msg) {
+    history.unshift(msg);
+    if (history.length > 10) history.pop();
+
+    let list = document.getElementById("historyList");
+    list.innerHTML = "";
+    history.forEach(item => {
+      let li = document.createElement("li");
+      li.innerHTML = item;
+      list.appendChild(li);
+    });
+  }
+
+  document.getElementById("historyBtn").onclick = () => {
+    document.getElementById("historyPopup").style.display = "block";
+  };
+
+  document.getElementById("closeHistory").onclick = () => {
+    document.getElementById("historyPopup").style.display = "none";
+  };
+
+  (function init() {
+    coverClosed = true;
+    document.getElementById("lid").classList.remove("open");
+    setDiceQuestionMarks();
+    updateBalanceDisplay();
+    document.getElementById("result").textContent = "Chưa mở nắp";
+  })();
+
+  // Lắng nghe thay đổi số dư từ admin
+  window.addEventListener("storage", (event) => {
+    if (event.key === "balance") {
+      balance = parseInt(event.newValue, 10) || 1000;
+      updateBalanceDisplay();
+      document.getElementById("result").textContent = "Số dư đã được admin cập nhật!";
+    }
+    if (event.key === "taiRatio") {
+      const ratio = parseInt(event.newValue, 10) || 53;
+      //document.getElementById("result").textContent = `Tỷ lệ Tài đã được admin cập nhật: ${ratio}%`;
+    }
+  });
+
+  window.addEventListener("load", () => {
+    const storedBalance = localStorage.getItem("balance");
+    if (storedBalance) {
+      balance = parseInt(storedBalance, 10);
+      updateBalanceDisplay();
+    } else {
+      localStorage.setItem("balance", balance);
+    }
+  });
+</script>
+
+</body>
+</html>
