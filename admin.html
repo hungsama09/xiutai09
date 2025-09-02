@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Admin Tài Xỉu</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #222;
+    color: white;
+    text-align: center;
+    padding: 40px;
+  }
+  h1 { color: gold; margin-bottom: 30px; }
+  input {
+    padding: 10px;
+    font-size: 16px;
+    border-radius: 8px;
+    border: none;
+    width: 200px;
+    margin-right: 10px;
+  }
+  button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    background: crimson;
+    color: white;
+  }
+  button:hover { background: darkred; }
+  #msg {
+    margin-top: 20px;
+    color: lightgreen;
+    font-weight: bold;
+  }
+  .section { margin-bottom: 30px; }
+  label { display: inline-block; width: 180px; text-align: right; margin-right: 10px; }
+</style>
+</head>
+<body>
+  <h1>🎯 Admin Game Tài Xỉu</h1>
+
+  <div class="section">
+    <label>Đặt số dư người chơi: </label>
+    <input type="number" id="newBalance" min="0" placeholder="Số dư mới">
+    <button onclick="updateBalance()">Cập nhật</button>
+  </div>
+
+  <div class="section">
+    <label>Đặt tỷ lệ Tài (%): </label>
+    <input type="number" id="newTaiRatio" min="0" max="100" placeholder="Tỷ lệ Tài">
+    <button onclick="updateTaiRatio()">Cập nhật</button>
+  </div>
+
+  <div id="msg"></div>
+
+  <script>
+    function updateBalance() {
+      const val = parseInt(document.getElementById("newBalance").value, 10);
+      if (!Number.isInteger(val) || val < 0) {
+        document.getElementById("msg").textContent = "Vui lòng nhập số dư hợp lệ (>=0).";
+        return;
+      }
+      localStorage.setItem("balance", val);
+      document.getElementById("msg").textContent = `✅ Số dư người chơi đã được đặt thành ${val}`;
+    }
+
+    function updateTaiRatio() {
+      let val = parseInt(document.getElementById("newTaiRatio").value, 10);
+      if (!Number.isInteger(val) || val < 0 || val > 100) {
+        document.getElementById("msg").textContent = "Vui lòng nhập tỷ lệ Tài hợp lệ (0-100%).";
+        return;
+      }
+      localStorage.setItem("taiRatio", val);
+      document.getElementById("msg").textContent = `✅ Tỷ lệ Tài đã được đặt thành ${val}%`;
+    }
+
+    // Hiển thị dữ liệu hiện tại khi mở trang admin
+    window.onload = () => {
+      const currentBalance = localStorage.getItem("balance") || 1000;
+      const currentRatio = localStorage.getItem("taiRatio") || 53;
+      document.getElementById("newBalance").value = currentBalance;
+      document.getElementById("newTaiRatio").value = currentRatio;
+    }
+  </script>
+</body>
+</html>
